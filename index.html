@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Callback</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.774.0.min.js"></script>
+  </head>
+  <body>
+    <div style="margin: 0px auto">
+      <button
+        id="btn1"
+        style="height: 40px; background-color: blue; color: white; width: 100px"
+      >
+        Send Data
+      </button>
+    </div>
+  </body>
+  <script>
+    let token;
+    const cognitoDomain = "cogidentity.auth.ap-south-1.amazoncognito.com"; // e.g., myapp.auth.us-east-1.amazoncognito.com
+    const clientId = "1i6699pblblbtkovoem8tel1s";
+    const redirectUri = "http://localhost:8000";
+    function redirectToCognito() {
+      const loginUrl = `https://${cognitoDomain}/login?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}`;
+      window.location.href = loginUrl;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get("code")) {
+      redirectToCognito();
+    } else {
+      document.getElementById("btn1").addEventListener("click", accessKinesis);
+    }
+    async function exchangeCodeForTokens(code) {
+      const tokenUrl = `https://${cognitoDomain}/oauth2/token`;
+      const body = `grant_type=authorization_code&client_id=${clientId}&code=${code}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}`;
+      //const authHeader = "Basic " + btoa(`${clientId}:${clientSecret}`);
+
+      const response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: body,
+      });
+
+      if (!response.ok) {
+        throw new Error("Token exchange failed");
+      }
+
+      token = response.json();
+      return token;
+    }
+
+    async function getAWSCredentials(idToken) {
+      AWS.config.region = "ap-south-1"; // e.g., us-east-1
+
+      AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: "ap-south-1:6eb197c6-876f-4056-86cf-3f8d27289736",
+        Logins: {
+          [`cognito-idp.${AWS.config.region}.amazonaws.com/ap-south-1_fTTyVAVwe`]:
+            idToken,
+        },
+      });
+
+      await AWS.config.credentials.getPromise();
+      return AWS.config.credentials;
+    }
+
+    async function accessKinesis() {
+      const code = params.get("code");
+
+      if (!code) {
+        console.error("Authorization code not found");
+        return;
+      }
+
+      try {
+        const tokens = token || (await exchangeCodeForTokens(code));
+        console.log("Tokens:", tokens);
+
+        const credentials = await getAWSCredentials(tokens.id_token);
+        console.log("AWS Credentials:", credentials);
+
+        const kinesis = new AWS.Kinesis();
+        const jsonString = JSON.stringify({ event: "linkClicked" });
+        const kinesisParams = {
+          Data: jsonString,
+          PartitionKey: "key1",
+          StreamName: "DemoKinesis",
+        };
+
+        kinesis.putRecord(kinesisParams, (err, data) => {
+          if (err) console.error(err, err.stack);
+          else console.log(data);
+        });
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    // Call the function to handle the callback
+    //accessKinesis();
+  </script>
+</html>
