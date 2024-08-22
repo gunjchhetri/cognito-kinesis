@@ -29,11 +29,6 @@ export class CognitoIdentityStack extends cdk.Stack {
     const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
       userPool,
       generateSecret: false,
-      authFlows: {
-        adminUserPassword: true,
-        custom: true,
-        userPassword: true,
-      },
       supportedIdentityProviders: [
         cognito.UserPoolClientIdentityProvider.COGNITO,
       ],
@@ -41,11 +36,7 @@ export class CognitoIdentityStack extends cdk.Stack {
         flows: {
           authorizationCodeGrant: true,
         },
-        scopes: [
-          cognito.OAuthScope.OPENID,
-          cognito.OAuthScope.EMAIL,
-          cognito.OAuthScope.PROFILE,
-        ],
+        scopes: [cognito.OAuthScope.EMAIL],
         callbackUrls: ["http://localhost:8000"],
         logoutUrls: ["http://localhost:8000"],
       },
