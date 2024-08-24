@@ -17,8 +17,8 @@
   </body>
   <script>
     let token;
-    const cognitoDomain = "cogidentity.auth.ap-south-1.amazoncognito.com"; // e.g., myapp.auth.us-east-1.amazoncognito.com
-    const clientId = "1i6699pblblbtkovoem8tel1s";
+    const cognitoDomain = "Put_Cognito_Domain_Here"; // e.g., myapp.auth.us-east-1.amazoncognito.com
+    const clientId = "Put_Client_ID_Here";
     const redirectUri = "http://localhost:8000";
     function redirectToCognito() {
       const loginUrl = `https://${cognitoDomain}/login?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
@@ -59,9 +59,9 @@
       AWS.config.region = "ap-south-1"; // e.g., us-east-1
 
       AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: "ap-south-1:6eb197c6-876f-4056-86cf-3f8d27289736",
+        IdentityPoolId: "Add_Idenitity_Pool",
         Logins: {
-          [`cognito-idp.${AWS.config.region}.amazonaws.com/ap-south-1_fTTyVAVwe`]:
+          [`cognito-idp.${AWS.config.region}.amazonaws.com/User_Pool_Id`]:
             idToken,
         },
       });
